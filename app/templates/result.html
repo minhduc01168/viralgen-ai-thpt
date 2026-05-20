@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả phân tích - ViralGen AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .seq-preview {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            color: #2d3436;
+        }
+        .seq-preview .nuc-a { color: #e74c3c; font-weight: 600; }
+        .seq-preview .nuc-t { color: #27ae60; font-weight: 600; }
+        .seq-preview .nuc-g { color: #f39c12; font-weight: 600; }
+        .seq-preview .nuc-c { color: #3498db; font-weight: 600; }
+        .seq-preview .nuc-n { color: #95a5a6; }
+        .seq-preview .ellipsis { color: #636e72; font-weight: bold; }
+        .mutation-badge { font-size: 0.75rem; }
+        .gc-bar { height: 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-virus me-2"></i>
+                ViralGen AI
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Trang chủ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Result Section -->
+    <section class="py-5">
+        <div class="container">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2>
+                            <i class="fas fa-chart-bar me-2 text-primary"></i>
+                            Kết quả phân tích
+                        </h2>
+                        <a href="/" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i> Phân tích mới
+                        </a>
+                    </div>
+                    <hr>
+                </div>
+            </div>
+
+            <!-- Main Result Card -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg">
+                        <div class="card-header py-3 {{ 'bg-success' if not result.is_unknown else 'bg-danger' }} text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-{{ 'check-circle' if not result.is_unknown else 'exclamation-triangle' }} me-2"></i>
+                                    {{ result.variant }}
+                                </h4>
+                                <span class="badge bg-white text-{{ 'success' if not result.is_unknown else 'danger' }}">
+                                    {{ 'Đã biết' if not result.is_unknown else 'Chưa biết' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-file me-2"></i> Thông tin file</h5>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Tên file:</strong> {{ result.file_name }}</li>
+                                        <li><strong>Tổng trình tự:</strong> {{ result.total_sequences }}</li>
+                                        <li><strong>Trình tự phân tích:</strong> {{ result.sequences_analyzed }} (>= 25,000 nt)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-chart-pie me-2"></i> Chỉ số chính</h5>
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <strong>Độ tự tin:</strong>
+                                            <div class="progress mt-1" style="height: 25px;">
+                                                <div class="progress-bar {{ 'bg-success' if result.confidence > 70 else 'bg-warning' if result.confidence > 50 else 'bg-danger' }}" 
+                                                     role="progressbar" style="width: {{ result.confidence }}%">
+                                                    {{ result.confidence }}%
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="mt-2">
+                                            <strong>Khoảng cách Mahalanobis:</strong>
+                                            <span class="{{ 'text-success' if result.mahalanobis_distance < result.mahalanobis_threshold else 'text-danger' }}">
+                                                {{ result.mahalanobis_distance }}
+                                            </span>
+                                            <small class="text-muted">(Ngưỡng: {{ result.mahalanobis_threshold }})</small>
+                                        </li>
+                                        <li>
+                                            <strong>Độ dao động suy luận:</strong>
+                                            <span class="{{ 'text-success' if result.mc_variance < 1.5 else 'text-danger' }}">
+                                                {{ result.mc_variance }}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sequences Info -->
+            {% if result.sequences %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-dna me-2"></i>
+                                Danh sách trình tự trong file
+                                <span class="badge bg-light text-dark ms-2">{{ result.sequences|length }}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Bảng tóm tắt -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Mã trình tự</th>
+                                            <th>Nguồn gốc</th>
+                                            <th>Năm</th>
+                                            <th>Độ dài</th>
+                                            <th>GC%</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for seq in result.sequences[:20] %}
+                                        <tr>
+                                            <td>{{ seq.index }}</td>
+                                            <td>
+                                                <code>{{ seq.id }}</code>
+                                                {% if seq.sample_type %}
+                                                <br><small class="text-muted">{{ seq.sample_type }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ seq.origin if seq.origin else 'Không rõ' }}</td>
+                                            <td>{{ seq.year if seq.year else '-' }}</td>
+                                            <td>{{ "{:,}".format(seq.length) }} nt</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2">{{ seq.gc_content }}%</span>
+                                                    <div class="flex-grow-1 gc-bar" style="background: #e9ecef;">
+                                                        <div class="gc-bar" style="width: {{ seq.gc_content }}%; background: linear-gradient(90deg, #3498db, #2ecc71);"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if seq.length >= 25000 %}
+                                                    <span class="badge bg-success">Đủ dài</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Quá ngắn</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {% if result.sequences|length > 20 %}
+                            <div class="text-muted small mb-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Hiển thị 20/{{ result.sequences|length }} trình tự đầu tiên
+                            </div>
+                            {% endif %}
+
+                            <!-- Giải thích thuật ngữ -->
+                            <div class="accordion" id="termAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#termCollapse">
+                                            <i class="fas fa-question-circle me-2"></i>
+                                            Giải thích thuật ngữ
+                                        </button>
+                                    </h2>
+                                    <div id="termCollapse" class="accordion-collapse collapse" data-bs-parent="#termAccordion">
+                                        <div class="accordion-body">
+                                            <table class="table table-sm table-borderless mb-0">
+                                                <tr>
+                                                    <td><strong>Mã trình tự (ID)</strong></td>
+                                                    <td>Mã định danh duy nhất do NCBI GenBank cấp, dùng để tra cứu trên cơ sở dữ liệu quốc tế</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Nguồn gốc</strong></td>
+                                                    <td>Quốc gia hoặc khu vực nơi mẫu virus được thu thập</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Độ dài (nt)</strong></td>
+                                                    <td>Số nucleotide trong trình tự. Genome SARS-CoV-2 đầy đủ có khoảng 29,900 nt</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>GC%</strong></td>
+                                                    <td>Tỷ lệ nucleotide G và C. SARS-CoV-2 thường có GC% khoảng 37-38%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Trạng thái</strong></td>
+                                                    <td><span class="badge bg-success">Đủ dài</span> = Có thể phân tích (>25,000 nt)<br>
+                                                        <span class="badge bg-warning">Quá ngắn</span> = Không đủ dữ liệu để phân tích</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview chuỗi DNA -->
+                            <div class="mt-4">
+                                <h6><i class="fas fa-eye me-2"></i>Xem trước chuỗi DNA</h6>
+                                {% for seq in result.sequences[:3] %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span>
+                                            <strong>{{ seq.id }}</strong>
+                                            {% if seq.origin %}
+                                                <span class="badge bg-info ms-2">{{ seq.origin }}</span>
+                                            {% endif %}
+                                            {% if seq.year %}
+                                                <span class="badge bg-secondary ms-1">{{ seq.year }}</span>
+                                            {% endif %}
+                                        </span>
+                                        <small class="text-muted">{{ "{:,}".format(seq.length) }} nucleotide</small>
+                                    </div>
+                                    <div class="seq-preview" id="seq-preview-{{ loop.index }}">
+                                        {{ seq.preview }}
+                                    </div>
+                                    <div class="mt-1">
+                                        <small class="text-muted">
+                                            <span class="text-danger">A={{ seq.n_counts.A }}</span> |
+                                            <span class="text-primary">C={{ seq.n_counts.C }}</span> |
+                                            <span class="text-warning">G={{ seq.n_counts.G }}</span> |
+                                            <span class="text-success">T={{ seq.n_counts.T }}</span>
+                                            {% if seq.n_counts.N > 0 %}
+                                            | <span class="text-secondary">N={{ seq.n_counts.N }} (không xác định)</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                                {% if result.sequences|length > 3 %}
+                                <div class="text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Chỉ hiển thị {{ result.sequences[:3]|length }}/{{ result.sequences|length }} trình tự
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Phân bố xác suất
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="probabilityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Chỉ số tương đồng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="similarityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similarity Scores Table -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-table me-2"></i>
+                                Chi tiết chỉ số tương đồng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Biến thể</th>
+                                            <th>Điểm tương đồng</th>
+                                            <th>Mức độ</th>
+                                            <th>Biểu đồ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for variant, score in result.similarity_scores.items() %}
+                                        <tr>
+                                            <td><strong>{{ variant }}</strong></td>
+                                            <td>{{ score }}%</td>
+                                            <td>
+                                                {% if score > 80 %}
+                                                    <span class="badge bg-success">Cao</span>
+                                                {% elif score > 50 %}
+                                                    <span class="badge bg-warning">Trung bình</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Thấp</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-info" role="progressbar" 
+                                                         style="width: {{ score }}%"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mutation Sites -->
+            {% if result.mutation_sites %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Đột biến phát hiện được
+                                <span class="badge bg-light text-danger ms-2">{{ result.mutation_sites|length }}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if result.mutation_source %}
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-microscope me-2"></i>
+                                    Phân tích trên trình tự nào?
+                                </h6>
+                                <p class="mb-1">
+                                    <strong>Mã mẫu:</strong> <code>{{ result.mutation_source.id }}</code>
+                                    <span class="ms-3"><strong>Độ dài:</strong> {{ "{:,}".format(result.mutation_source.length) }} nucleotide</span>
+                                    <span class="ms-3"><strong>Thứ tự:</strong> #{{ result.mutation_source.index }} trong file</span>
+                                </p>
+                                <small class="text-muted">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Hệ thống chọn trình tự <strong>dài nhất</strong> trong file để so sánh với genome gốc SARS-CoV-2 (Wuhan-Hu-1, phát hiện năm 2019 tại Trung Quốc).
+                                    Các vị trí đột biến cho biết virus đã thay đổi những gì so với phiên bản gốc.
+                                </small>
+                            </div>
+                            {% endif %}
+
+                            <!-- Bảng đột biến -->
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Vị trí
+                                                <span class="text-muted" data-bs-toggle="tooltip" title="Vị trí nucleotide trên genome virus (genome có ~29,900 nucleotide)">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            </th>
+                                            <th>
+                                                Bản gốc
+                                                <span class="text-muted" data-bs-toggle="tooltip" title="Nucleotide tại vị trí này ở virus SARS-CoV-2 gốc (Wuhan-Hu-1)">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            </th>
+                                            <th>
+                                                Bản đột biến
+                                                <span class="text-muted" data-bs-toggle="tooltip" title="Nucleotide thực tế tìm thấy trong mẫu này">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            </th>
+                                            <th>Gen</th>
+                                            <th>
+                                                Tên đột biến
+                                                <span class="text-muted" data-bs-toggle="tooltip" title="Tên khoa học của đột biến (Vị trí amino acid trên protein)">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            </th>
+                                            <th>Ý nghĩa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for mutation in result.mutation_sites %}
+                                        <tr>
+                                            <td>
+                                                <code>{{ mutation.position }}</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary fs-6">{{ mutation.ref_base }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-danger fs-6">{{ mutation.actual_base }}</span>
+                                            </td>
+                                            <td>
+                                                {% if mutation.gene == 'Spike' %}
+                                                    <span class="badge bg-primary">{{ mutation.gene }}</span>
+                                                    <br><small class="text-muted">Protein gai</small>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ mutation.gene }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong class="text-danger">{{ mutation.codon_change }}</strong>
+                                            </td>
+                                            <td>
+                                                <small>{{ mutation.note }}</small>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Giải thích -->
+                            <div class="mt-3">
+                                <div class="accordion" id="mutationAccordion">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mutationCollapse">
+                                                <i class="fas fa-book me-2"></i>
+                                                Đọc thêm: Ý nghĩa các đột biến thường gặp
+                                            </button>
+                                        </h2>
+                                        <div id="mutationCollapse" class="accordion-collapse collapse" data-bs-parent="#mutationAccordion">
+                                            <div class="accordion-body">
+                                                <table class="table table-sm">
+                                                    <tr>
+                                                        <td><strong class="text-primary">D614G</strong></td>
+                                                        <td>Đột biến phổ biến nhất, giúp virus lây nhiễm dễ hơn. Có mặt ở hầu hết các biến thể.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-primary">N501Y</strong></td>
+                                                        <td>Tăng ái lực với receptor ACE2 → virus bám chặt hơn vào tế bào người. Xuất hiện ở Alpha, Beta, Gamma, Omicron.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-primary">E484K</strong></td>
+                                                        <td>"Đột biến thoát kháng thể" - giúp virus né tránh hệ miễn dịch. Xuất hiện ở Beta, Gamma.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-primary">P681R</strong></td>
+                                                        <td>Tăng khả năng xâm nhập tế bào. Đặc trưng của biến thể Delta.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-primary">K417N/T</strong></td>
+                                                        <td>Thay đổi ái lực với ACE2. K417N ở Beta/Omicron, K417T ở Gamma.</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Summary -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-align-left me-2"></i>
+                                Tóm tắt phân tích
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0 p-3 bg-light rounded" style="white-space: pre-wrap; font-family: 'Courier New', monospace;">{{ summary }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <a href="/" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-upload me-2"></i> Phân tích file mới
+                    </a>
+                    <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i> In kết quả
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 ViralGen AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Khởi tạo tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (el) {
+            return new bootstrap.Tooltip(el);
+        });
+
+        // Colorize sequence preview
+        document.querySelectorAll('.seq-preview').forEach(el => {
+            let html = el.innerHTML.trim();
+            html = html.replace(/A/g, '<span class="nuc-a">A</span>');
+            html = html.replace(/T/g, '<span class="nuc-t">T</span>');
+            html = html.replace(/G/g, '<span class="nuc-g">G</span>');
+            html = html.replace(/C/g, '<span class="nuc-c">C</span>');
+            html = html.replace(/N/g, '<span class="nuc-n">N</span>');
+            html = html.replace(/\.\.\./g, '<span class="ellipsis">...</span>');
+            el.innerHTML = html;
+        });
+
+        // Charts
+        const probabilities = {{ result.probabilities|tojson }};
+        const similarityScores = {{ result.similarity_scores|tojson }};
+
+        new Chart(document.getElementById('probabilityChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(probabilities),
+                datasets: [{
+                    data: Object.values(probabilities),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } },
+                    title: { display: true, text: 'Phân bố xác suất dự đoán', font: { size: 16 } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('similarityChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(similarityScores),
+                datasets: [{
+                    label: 'Điểm tương đồng (%)',
+                    data: Object.values(similarityScores),
+                    backgroundColor: ['rgba(255,99,132,0.7)', 'rgba(54,162,235,0.7)', 'rgba(255,206,86,0.7)', 'rgba(75,192,192,0.7)', 'rgba(153,102,255,0.7)'],
+                    borderColor: ['rgba(255,99,132,1)', 'rgba(54,162,235,1)', 'rgba(255,206,86,1)', 'rgba(75,192,192,1)', 'rgba(153,102,255,1)'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } },
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Chỉ số tương đồng với các biến thể', font: { size: 16 } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

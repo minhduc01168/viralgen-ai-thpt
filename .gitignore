@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (user files)
+app/uploads/*
+!app/uploads/.gitkeep
+
+# Test results
+test_results_*.json
+
+# Weight files (large binary - uncomment if you don't want to track)
+# weight/*.pkl
+# weight/*.pth
+
+# Jupyter
+.ipynb_checkpoints/

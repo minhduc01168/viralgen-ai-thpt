@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViralGen AI - Hệ Thống Giám Sát Virus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-virus me-2"></i>
+                ViralGen AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-home me-1"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/test-files">
+                            <i class="fas fa-database me-1"></i> Dữ liệu test
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section bg-gradient-primary text-white py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">
+                        <i class="fas fa-dna me-3"></i>
+                        ViralGen AI
+                    </h1>
+                    <p class="lead mb-4">
+                        Hệ thống giám sát virus thế giới mở sử dụng trí tuệ nhân tạo để phân tích và định danh biến thể SARS-CoV-2.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="#upload-section" class="btn btn-light btn-lg px-4">
+                            <i class="fas fa-upload me-2"></i> Bắt đầu phân tích
+                        </a>
+                        <a href="#features" class="btn btn-outline-light btn-lg px-4">
+                            <i class="fas fa-info-circle me-2"></i> Tìm hiểu thêm
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <img src="https://img.freepik.com/free-vector/dna-concept-illustration_114360-1244.jpg" 
+                         alt="DNA Illustration" class="img-fluid rounded shadow" style="max-height: 400px;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Upload Section -->
+    <section id="upload-section" class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-primary text-white text-center py-4">
+                            <h3 class="mb-0">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>
+                                Tải lên trình tự gen
+                            </h3>
+                            <p class="mb-0 mt-2">Hỗ trợ định dạng .fasta, .fa, .csv</p>
+                        </div>
+                        <div class="card-body p-5">
+                            <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                                <div class="upload-area border-2 border-dashed border-primary rounded-3 p-5 text-center mb-4" 
+                                     id="dropZone">
+                                    <i class="fas fa-file-upload fa-3x text-primary mb-3"></i>
+                                    <h4>Kéo và thả file vào đây</h4>
+                                    <p class="text-muted">hoặc click để chọn file</p>
+                                    <input type="file" name="file" id="fileInput" class="d-none" 
+                                           accept=".fasta,.fa,.csv">
+                                    <button type="button" class="btn btn-outline-primary btn-lg mt-3" 
+                                            onclick="document.getElementById('fileInput').click()">
+                                        <i class="fas fa-folder-open me-2"></i> Chọn file
+                                    </button>
+                                </div>
+                                
+                                <div id="fileInfo" class="alert alert-info d-none">
+                                    <i class="fas fa-file me-2"></i>
+                                    <span id="fileName"></span>
+                                    <span id="fileSize" class="ms-2"></span>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="analyzeBtn" disabled>
+                                        <i class="fas fa-search me-2"></i> Phân tích ngay
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">
+                <i class="fas fa-star me-2 text-warning"></i>
+                Tính năng nổi bật
+            </h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3">
+                                <i class="fas fa-dna fa-2x"></i>
+                            </div>
+                            <h4>Phân tích Multi-Kmer</h4>
+                            <p class="text-muted">
+                                Sử dụng đồng thời 3 cửa sổ K-mer (K=3,4,5) để tạo không gian vector 1344 chiều, 
+                                giúp phát hiện cả các đột biến ngắn và dài.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3">
+                                <i class="fas fa-brain fa-2x"></i>
+                            </div>
+                            <h4>Học biểu diễn sâu</h4>
+                            <p class="text-muted">
+                                Mạng nơ-ron OpenWorldVirusEncoder nén thông tin gen thành vector 128 chiều 
+                                tinh khiết, giúp phân loại chính xác các biến thể.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-warning bg-gradient text-white rounded-circle mb-3">
+                                <i class="fas fa-shield-alt fa-2x"></i>
+                            </div>
+                            <h4>Phát hiện biến thể lạ</h4>
+                            <p class="text-muted">
+                                Sử dụng khoảng cách Mahalanobis và MC Dropout để tự động phát hiện 
+                                và cảnh báo khi gặp mẫu gen chưa từng thấy.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Test Data Section -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">
+                <i class="fas fa-database me-2 text-info"></i>
+                Dữ liệu mẫu
+            </h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Biến thể đã biết (IND)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Alpha (B.1.1.7)
+                                    <a href="/test/IND/sequences_20260517_1817244_B.1.1.7_Alpha.fasta" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Beta (B.1.351)
+                                    <a href="/test/IND/sequences_20260517_611851_B.1.351_Beta.fasta" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Delta (B.1.617.2)
+                                    <a href="/test/IND/sequences_20260517_5731920_B.1.617.2_Delta.fasta" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Gamma (P.1)
+                                    <a href="/test/IND/sequences_20260517_4641221_P.1_Gamma.fasta" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Omicron (B.1.1.529)
+                                    <a href="/test/IND/sequences_20260517_423576_B.1.1.529_Omicron.fasta" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Biến thể lạ (OOD)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Lambda (C.37)
+                                    <a href="/test/OOD/sequences_20260517_2991120_C.37_Lambda.fasta" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Zeta (P.2)
+                                    <a href="/test/OOD/sequences_20260517_4163255_P.2_Zeta.fasta" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Mu (B.1.621)
+                                    <a href="/test/OOD/sequences_20260517_4513422_B.1.621_Mu.fasta" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Eta (B.1.525)
+                                    <a href="/test/OOD/sequences_20260517_4744042_B.1.525_Eta.fasta" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-play me-1"></i> Test
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-virus me-2"></i> ViralGen AI</h5>
+                    <p class="mb-0">
+                        Hệ thống giám sát virus thế giới mở sử dụng trí tuệ nhân tạo.
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Liên kết</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-white-50">Trang chủ</a></li>
+                        <li><a href="#features" class="text-white-50">Tính năng</a></li>
+                        <li><a href="#upload-section" class="text-white-50">Phân tích</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Liên hệ</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i> contact@viralgen.ai</li>
+                        <li><i class="fas fa-globe me-2"></i> viralgen.ai</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p class="mb-0">&copy; 2026 ViralGen AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Xử lý kéo thả file
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        // Ngăn chặn hành vi mặc định cho kéo thả
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight vùng kéo thả
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('border-success', 'bg-light');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-success', 'bg-light');
+        }
+
+        // Xử lý file được thả vào
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            handleFiles(files);
+        }
+
+        // Xử lý file được chọn
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                if (['fasta', 'fa', 'csv'].includes(ext)) {
+                    fileName.textContent = file.name;
+                    fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    fileInfo.classList.remove('d-none');
+                    analyzeBtn.disabled = false;
+                } else {
+                    alert('Định dạng file không hỗ trợ. Chỉ chấp nhận .fasta, .fa, .csv');
+                    fileInput.value = '';
+                    fileInfo.classList.add('d-none');
+                    analyzeBtn.disabled = true;
+                }
+            }
+        }
+
+        // Xử lý form submit
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Vui lòng chọn file trước khi phân tích');
+            }
+        });
+    </script>
+</body>
+</html>
