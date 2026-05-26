@@ -28,6 +28,86 @@ viralgen-ai-app/
 └── requirements.txt              # Dependencies
 ```
 
+## Hướng dẫn cài đặt
+
+### Yêu cầu hệ thống
+
+- **Python**: 3.9 trở lên (khuyến nghị 3.10+)
+- **RAM**: Tối thiểu 4GB (khuyến nghị 8GB)
+- **Disk**: Tối thiểu 2GB trống
+- **Git**: Để clone repository
+
+### Windows
+
+```bash
+# 1. Cài Python từ https://www.python.org/downloads/
+#    Đánh dấu chọn "Add Python to PATH" khi cài đặt
+
+# 2. Clone project
+git clone <repository-url>
+cd viralgen-ai-app
+
+# 3. Tạo virtual environment (khuyến nghị)
+python -m venv venv
+venv\Scripts\activate
+
+# 4. Cài đặt dependencies
+pip install -r requirements.txt
+
+# 5. Chạy ứng dụng (script tự động)
+start.bat
+```
+
+### macOS
+
+```bash
+# 1. Cài Homebrew (nếu chưa có)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Cài Python
+brew install python@3.10
+
+# 3. Clone project
+git clone <repository-url>
+cd viralgen-ai-app
+
+# 4. Tạo virtual environment (khuyến nghị)
+python3 -m venv venv
+source venv/bin/activate
+
+# 5. Cài đặt dependencies
+pip install -r requirements.txt
+
+# 6. Chạy ứng dụng
+chmod +x start.sh
+./start.sh
+```
+
+### Ubuntu / Debian
+
+```bash
+# 1. Cập nhật package và cài Python
+sudo apt update
+sudo apt install python3 python3-pip python3-venv git -y
+
+# 2. Clone project
+git clone <repository-url>
+cd viralgen-ai-app
+
+# 3. Tạo virtual environment (khuyến nghị)
+python3 -m venv venv
+source venv/bin/activate
+
+# 4. Cài đặt dependencies
+pip install -r requirements.txt
+
+# 5. Chạy ứng dụng
+chmod +x start.sh
+./start.sh
+```
+
+---
+
 ## Cách sử dụng
 
 ### Bước 1: Cài đặt dependencies
