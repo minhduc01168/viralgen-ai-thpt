@@ -1,0 +1,7 @@
+Đặt thư mục sars-cov2-time-forward-dataset/ (nguyên cấu trúc T0_train/, T1_test_pre_omicron/,
+T2_test_transition/, T3_test_post_omicron/) vào đây, rồi chạy:
+
+  python3 scripts/00a_prepare_dataset.py --root data/sars-cov2-time-forward-dataset --dry-run
+  python3 scripts/00a_prepare_dataset.py --root data/sars-cov2-time-forward-dataset
+
+Xem README.md để biết chi tiết.

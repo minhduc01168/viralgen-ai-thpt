@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Comparison Panel - ViralGen AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .comparison-hero {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #6b11ff 100%);
+            color: #fff;
+            padding: 2.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .comparison-hero::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+        }
+        .nav-pills-custom .nav-link {
+            color: #495057;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-right: 8px;
+            background-color: #f1f3f5;
+            transition: all 0.2s ease;
+        }
+        .nav-pills-custom .nav-link.active {
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+        }
+        .winner-tag {
+            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+            color: white;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .chart-container-custom {
+            position: relative;
+            height: 380px;
+            width: 100%;
+        }
+        .table-custom-highlight {
+            background-color: rgba(25, 135, 84, 0.08) !important;
+            font-weight: 600;
+        }
+        .metric-badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-virus me-2"></i>
+                ViralGen AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold" href="/comparison">
+                            <i class="fas fa-balance-scale me-1"></i> So sánh công cụ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/test-files">
+                            <i class="fas fa-database me-1"></i> Dữ liệu test
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-sm btn-light text-primary fw-semibold px-3" href="/#upload-section">
+                            <i class="fas fa-play me-1"></i> Phân tích mẫu
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Hero -->
+    <header class="comparison-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge bg-light text-primary mb-2 px-3 py-2 fw-semibold">
+                        <i class="fas fa-flask me-1"></i> Thực nghiệm Benchmark Chuẩn Hóa
+                    </span>
+                    <h1 class="display-5 fw-bold mb-3">Bảng So Sánh Các Công Cụ Giám Sát Virus</h1>
+                    <p class="lead mb-0 text-white-50">
+                        Đối chiếu năng lực định danh biến thể SARS-CoV-2 và phát hiện biến thể lạ (Out-of-Distribution - OOD) 
+                        giữa <strong>ViralGen AI (Open-World DL)</strong>, <strong>Mash (MinHash)</strong> và <strong>NCBI BLAST</strong>.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                    <a href="/api/comparison" target="_blank" class="btn btn-outline-light me-2">
+                        <i class="fas fa-code me-1"></i> JSON API
+                    </a>
+                    <button class="btn btn-light" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> In báo cáo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        <!-- Quick Stat Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card border-start border-4 border-success p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold">ViralGen AI (Open-World)</span>
+                        <span class="winner-tag"><i class="fas fa-trophy me-1"></i>Tốt nhất</span>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h2 class="fw-bold text-success mb-0 me-2">0.990</h2>
+                        <span class="badge bg-success-subtle text-success">AUROC OOD</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        <i class="fas fa-check-circle text-success me-1"></i> FPR95: <strong>4.36%</strong> | Thời gian: <strong>~0.01s/seq</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card stat-card border-start border-4 border-primary p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold">Mash (MinHash k-mer)</span>
+                        <span class="badge bg-primary-subtle text-primary">Baseline 1</span>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h2 class="fw-bold text-primary mb-0 me-2">0.8548</h2>
+                        <span class="badge bg-primary-subtle text-primary">AUROC OOD</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        <i class="fas fa-info-circle text-primary me-1"></i> FPR95: <strong>22.78%</strong> | Ngưỡng distance: <strong>0.0025</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card stat-card border-start border-4 border-secondary p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-semibold">BLAST (blastn - NCBI)</span>
+                        <span class="badge bg-secondary-subtle text-secondary">Baseline 2</span>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h2 class="fw-bold text-secondary mb-0 me-2">0.7048</h2>
+                        <span class="badge bg-secondary-subtle text-secondary">AUROC OOD</span>
+                    </div>
+                    <div class="small text-muted mt-2">
+                        <i class="fas fa-exclamation-triangle text-warning me-1"></i> FPR95: <strong>97.32%</strong> | Thời gian: <strong>129.08s</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills nav-pills-custom mb-4" id="comparisonTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-overview" data-bs-toggle="pill" data-bs-target="#content-overview" type="button" role="tab">
+                    <i class="fas fa-table me-2"></i>Bảng 7: So Sánh Tổng Quan
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-rejection" data-bs-toggle="pill" data-bs-target="#content-rejection" type="button" role="tab">
+                    <i class="fas fa-chart-bar me-2"></i>Bảng 6: Tỷ Lệ Phát Hiện Theo Chủng
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-robustness" data-bs-toggle="pill" data-bs-target="#content-robustness" type="button" role="tab">
+                    <i class="fas fa-shield-alt me-2"></i>Figure 7: Độ Bền Dưới Nhiễu
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-matrix" data-bs-toggle="pill" data-bs-target="#content-matrix" type="button" role="tab">
+                    <i class="fas fa-th-list me-2"></i>Đặc Tính Kỹ Thuật & Khả Thi
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content" id="comparisonTabContent">
+            <!-- TAB 1: OVERVIEW & TABLE 7 -->
+            <div class="tab-pane fade show active" id="content-overview" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold text-dark">
+                                    <i class="fas fa-list-ol text-primary me-2"></i>
+                                    Bảng 7 — So sánh hiệu năng phát hiện biến thể mới (OOD Detection)
+                                </h5>
+                                <span class="badge bg-primary">Dataset Chuẩn Hóa T0–T3</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Phương pháp</th>
+                                                <th>Cơ chế OOD</th>
+                                                <th class="text-center">AUROC &uarr;</th>
+                                                <th class="text-center">FPR95 &darr;</th>
+                                                <th class="text-center">Thời gian (T1–T3)</th>
+                                                <th class="text-center">Ngưỡng &theta;</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for m in metrics %}
+                                            <tr class="{{ 'table-custom-highlight' if m.is_winner else '' }}">
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge {{ m.badge }} me-2">&bull;</span>
+                                                        <div>
+                                                            <div class="fw-bold">{{ m.name }}</div>
+                                                            <small class="text-muted d-block">{{ m.method_detail }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border">{{ m.key|upper }}</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="fw-bold {{ 'text-success fs-6' if m.is_winner else '' }}">
+                                                        {{ m.auroc }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge {{ 'bg-success' if m.fpr95 < 0.1 else ('bg-warning text-dark' if m.fpr95 < 0.5 else 'bg-danger') }}">
+                                                        {{ m.fpr95_pct }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    {{ m.runtime_seconds }}s
+                                                </td>
+                                                <td class="text-center text-muted font-monospace small">
+                                                    {{ m.threshold }}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light py-3 small text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Ghi chú:</strong> AUROC (càng gần 1.0 càng tốt) đo khả năng phân biệt giữa biến thể đã học và biến thể mới.
+                                FPR95 (càng thấp càng tốt) là tỷ lệ báo động giả khi độ nhạy nhận diện biến thể lạ đạt 95%.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h5 class="mb-0 fw-bold text-dark">
+                                    <i class="fas fa-chart-pie text-primary me-2"></i>
+                                    Trực Quan Hóa AUROC vs FPR95
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container-custom">
+                                    <canvas id="overviewComparisonChart"></canvas>
+                                </div>
+                                <div class="mt-3 p-3 bg-light rounded small">
+                                    <h6 class="fw-bold mb-1 text-dark"><i class="fas fa-lightbulb text-warning me-1"></i>Điểm mấu chốt:</h6>
+                                    <p class="mb-0 text-secondary">
+                                        ViralGen AI vượt trội hơn hẳn BLAST (+0.2852 AUROC, giảm FPR95 từ 97.3% xuống 4.36%) và Mash (+0.1352 AUROC),
+                                        chứng minh mạng nơ-ron học đặc trưng sâu kết hợp khoảng cách Mahalanobis hiệu quả hơn việc chỉ so khớp trình tự cục bộ.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TABLE 6 - REJECTION BY LINEAGE -->
+            <div class="tab-pane fade" id="content-rejection" role="tabpanel">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-percentage text-primary me-2"></i>
+                                Bảng 6 — Tỷ Lệ Phát Hiện & Từ Chối (Rejection Rate) Theo Từng Thời Kỳ & Biến Thể
+                            </h5>
+                            <small class="text-muted">Chủng đã biết: mong đợi Tỷ lệ từ chối thấp (~0-5%). Chủng lạ (Omicron T2, T3): mong đợi Tỷ lệ từ chối cao (>90%).</small>
+                        </div>
+                        <div class="btn-group" role="group" id="table6ToolSelector">
+                            <button type="button" class="btn btn-sm btn-outline-primary active" onclick="switchTable6View('all')">Tất cả</button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="switchTable6View('viralgen')">ViralGen AI</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="switchTable6View('mash')">Mash</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="switchTable6View('blast')">BLAST</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Chart -->
+                        <div class="chart-container-custom mb-4" style="height: 320px;">
+                            <canvas id="rejectionRatesChart"></canvas>
+                        </div>
+
+                        <!-- Data Tables -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle text-center" id="table6DataTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Thời kỳ</th>
+                                        <th>Chủng (Lineage)</th>
+                                        <th>Phân loại</th>
+                                        <th>Số mẫu (n)</th>
+                                        <th>ViralGen AI Từ Chối</th>
+                                        <th>Mash Từ Chối</th>
+                                        <th>BLAST Từ Chối</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in table6.viralgen %}
+                                    <tr class="{{ 'table-warning' if row.is_ood else '' }}">
+                                        <td><strong>{{ row.period }}</strong></td>
+                                        <td>
+                                            <span class="badge {{ 'bg-danger' if row.is_ood else 'bg-secondary' }}">
+                                                {{ row.lineage }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if row.is_ood %}
+                                                <span class="badge bg-danger-subtle text-danger fw-semibold">Biến thể lạ (OOD)</span>
+                                            {% else %}
+                                                <span class="badge bg-success-subtle text-success fw-semibold">Đã biết (In-Distribution)</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ row.n }}</td>
+                                        <td>
+                                            <span class="fw-bold {{ 'text-success' if row.is_ood else 'text-muted' }}">
+                                                {{ "%.2f"|format(row.rejection_rate * 100) }}%
+                                            </span>
+                                            <small class="text-muted">({{ row.rejected }}/{{ row.n }})</small>
+                                        </td>
+                                        <td>
+                                            {% set mash_row = table6.mash[loop.index0] if table6.mash|length > loop.index0 else None %}
+                                            {% if mash_row %}
+                                                <span>{{ "%.2f"|format(mash_row.rejection_rate * 100) }}%</span>
+                                                <small class="text-muted">({{ mash_row.rejected }}/{{ mash_row.n }})</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% set blast_row = table6.blast[loop.index0] if table6.blast|length > loop.index0 else None %}
+                                            {% if blast_row %}
+                                                <span>{{ "%.2f"|format(blast_row.rejection_rate * 100) }}%</span>
+                                                <small class="text-muted">({{ blast_row.rejected }}/{{ blast_row.n }})</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: FIGURE 7 - ROBUSTNESS TO NOISE -->
+            <div class="tab-pane fade" id="content-robustness" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold text-dark">
+                                    <i class="fas fa-chart-line text-primary me-2"></i>
+                                    Figure 7 — Độ Bền Vững Dưới Các Mức Độ Nhiễu Giải Trình Tự (T2 Period)
+                                </h5>
+                                <span class="badge bg-info text-dark">Accuracy (%) vs Noise Level</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container-custom" style="height: 400px;">
+                                    <canvas id="robustnessLineChart"></canvas>
+                                </div>
+                                <div class="row mt-4 g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded text-center">
+                                            <div class="text-success fw-bold fs-5">93.40% &ndash; 99.60%</div>
+                                            <small class="text-muted fw-semibold">Độ chính xác ViralGen AI</small>
+                                            <p class="small text-muted mb-0 mt-1">Duy trì ổn định kể cả khi cắt ngắn 20% hoặc đột biến 5%.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded text-center">
+                                            <div class="text-primary fw-bold fs-5">2.63% &ndash; 89.57%</div>
+                                            <small class="text-muted fw-semibold">Độ chính xác Mash</small>
+                                            <p class="small text-muted mb-0 mt-1">Suy giảm nghiêm trọng khi xuất hiện đột biến điểm.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded text-center">
+                                            <div class="text-secondary fw-bold fs-5">4.39% &ndash; 93.66%</div>
+                                            <small class="text-muted fw-semibold">Độ chính xác BLAST</small>
+                                            <p class="small text-muted mb-0 mt-1">Gần như mất khả năng định danh khi đột biến thay thế &ge;0.5%.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h6 class="mb-0 fw-bold text-dark">
+                                    <i class="fas fa-image text-primary me-2"></i>
+                                    Ảnh Xuất Bản Gốc (Publication Figure 7)
+                                </h6>
+                            </div>
+                            <div class="card-body text-center p-3">
+                                <img src="{{ url_for('static', filename='img/figure7_robustness_T2.png') }}" 
+                                     alt="Figure 7 Robustness Curve" class="img-fluid rounded shadow-sm border mb-2"
+                                     style="max-height: 260px; object-fit: contain;">
+                                <div class="d-grid mt-2">
+                                    <a href="{{ url_for('static', filename='img/figure7_robustness_T2.png') }}" 
+                                       target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt me-1"></i> Mở ảnh độ phân giải cao
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h6 class="mb-0 fw-bold text-dark">
+                                    <i class="fas fa-microscope text-primary me-2"></i>
+                                    Phân Tích Cơ Chế Sinh Học & Thuật Toán
+                                </h6>
+                            </div>
+                            <div class="card-body small">
+                                <p class="mb-2">
+                                    <strong>Tại sao BLAST và Mash thất bại khi có đột biến?</strong>
+                                </p>
+                                <ul class="ps-3 mb-0 text-muted">
+                                    <li class="mb-2">
+                                        <strong>BLAST</strong> dựa trên thuật toán seed match (chuỗi khớp chính xác 11-28nt). Khi có đột biến rải rác 0.5-5%, các seed bị đứt đoạn, bitscore giảm mạnh khiến điểm novelty giả tạo tăng vọt.
+                                    </li>
+                                    <li class="mb-2">
+                                        <strong>Mash</strong> dùng MinHash k-mer (k=21). Một đột biến đơn lẻ làm phá hủy tới k=21 k-mer liên tiếp, dẫn tới k-mer Jaccard distance suy thoái nhanh chóng.
+                                    </li>
+                                    <li>
+                                        <strong>ViralGen AI</strong> khai thác biểu diễn không gian ẩn sâu (Multi-kmer TF-IDF K=3,4,5 kết hợp mạng nơ-ron học metric và khoảng cách Mahalanobis), nắm bắt tổng thể hình học di truyền thay vì phụ thuộc vào từng vị trí nucleotide cục bộ.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: TECHNICAL & CLINICAL FEASIBILITY -->
+            <div class="tab-pane fade" id="content-matrix" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-layer-group text-primary me-2"></i>
+                            Ma Trận Đánh Giá Tính Năng Kỹ Thuật & Khả Năng Triển Khai Thực Địa
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 25%;">Tiêu chí đánh giá</th>
+                                        <th style="width: 25%;" class="text-success"><i class="fas fa-crown me-1"></i>ViralGen AI</th>
+                                        <th style="width: 25%;" class="text-primary">Mash</th>
+                                        <th style="width: 25%;" class="text-secondary">NCBI BLAST</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-semibold">Cơ chế phát hiện biến thể mới</td>
+                                        <td><span class="badge bg-success">Học biểu diễn thế giới mở + Mahalanobis</span></td>
+                                        <td><span class="badge bg-primary">Khoảng cách Jaccard tối thiểu</span></td>
+                                        <td><span class="badge bg-secondary">Bitscore / E-value / Identity gap</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Độ trễ phân tích (Latency)</td>
+                                        <td><strong class="text-success">~10-50ms / mẫu</strong> (Thích hợp Real-time)</td>
+                                        <td>~1-2 giây / mẫu</td>
+                                        <td>~15-60 giây / mẫu (Phụ thuộc DB)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Yêu cầu cơ sở dữ liệu mẫu</td>
+                                        <td><span class="text-success fw-bold"><i class="fas fa-check me-1"></i>Nhỏ gọn</span> (~15MB trọng số mô hình)</td>
+                                        <td>Tập sketch k-mer nhị phân (.msh)</td>
+                                        <td>Cần xây dựng reference DB đồ sộ (.fasta, .nhr, .nin)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Độ bền trước sai số đọc NGS / Nanopore</td>
+                                        <td><span class="badge bg-success">Rất cao</span> (>93% accuracy dưới 20% cắt đoạn & 5% đột biến)</td>
+                                        <td><span class="badge bg-danger">Rất thấp</span> (suy giảm khi mất đoạn)</td>
+                                        <td><span class="badge bg-warning text-dark">Thấp</span> (nhạy cảm với đột biến điểm)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Khả năng triển khai Edge / Bệnh viện dã chiến</td>
+                                        <td><span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Hỗ trợ đầy đủ</span> (CPU thông thường, không cần internet)</td>
+                                        <td>Cần công cụ binary mash</td>
+                                        <td>Cần cài đặt trọn bộ ncbi-blast+ cồng kềnh</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Cung cấp độ bất định suy luận (Uncertainty)</td>
+                                        <td><span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Có</span> (MC Dropout Variance & khoảng cách Mahalanobis)</td>
+                                        <td><span class="text-danger"><i class="fas fa-times-circle me-1"></i>Không</span></td>
+                                        <td><span class="text-danger"><i class="fas fa-times-circle me-1"></i>Không</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 ViralGen AI — Open-World Surveillance System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Data injected from backend
+        const metricsData = {{ metrics|tojson }};
+        const robustnessData = {{ robustness|tojson }};
+        const table6Data = {{ table6|tojson }};
+
+        // --- Chart 1: Overview AUROC vs FPR95 ---
+        const overviewCtx = document.getElementById('overviewComparisonChart').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'bar',
+            data: {
+                labels: ['ViralGen AI', 'Mash', 'BLAST'],
+                datasets: [
+                    {
+                        label: 'AUROC (càng cao càng tốt)',
+                        data: [0.990, 0.8548, 0.7048],
+                        backgroundColor: 'rgba(25, 135, 84, 0.75)',
+                        borderColor: '#198754',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'FPR95 (càng thấp càng tốt)',
+                        data: [0.0436, 0.2278, 0.9732],
+                        backgroundColor: 'rgba(220, 53, 69, 0.75)',
+                        borderColor: '#dc3545',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1.0,
+                        ticks: {
+                            callback: v => (v * 100).toFixed(0) + '%'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 14 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': ' + (ctx.raw * 100).toFixed(2) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- Chart 2: Table 6 Rejection Rates Comparison ---
+        const rejectionCtx = document.getElementById('rejectionRatesChart').getContext('2d');
+        const labels = ['T1-Alpha', 'T1-Beta', 'T1-Delta', 'T1-Gamma', 'T2-Delta', 'T2-Omicron (OOD)', 'T3-Delta', 'T3-Omicron (OOD)'];
+        
+        const viralgenRejections = table6Data.viralgen.map(r => (r.rejection_rate * 100).toFixed(1));
+        const mashRejections = table6Data.mash.map(r => (r.rejection_rate * 100).toFixed(1));
+        const blastRejections = table6Data.blast.map(r => (r.rejection_rate * 100).toFixed(1));
+
+        const rejectionChart = new Chart(rejectionCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'ViralGen AI',
+                        data: viralgenRejections,
+                        backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Mash',
+                        data: mashRejections,
+                        backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'BLAST',
+                        data: blastRejections,
+                        backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Tỷ lệ từ chối (%)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': ' + ctx.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function switchTable6View(tool) {
+            const buttons = document.querySelectorAll('#table6ToolSelector button');
+            buttons.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tool === 'all') {
+                rejectionChart.data.datasets[0].hidden = false;
+                rejectionChart.data.datasets[1].hidden = false;
+                rejectionChart.data.datasets[2].hidden = false;
+            } else if (tool === 'viralgen') {
+                rejectionChart.data.datasets[0].hidden = false;
+                rejectionChart.data.datasets[1].hidden = true;
+                rejectionChart.data.datasets[2].hidden = true;
+            } else if (tool === 'mash') {
+                rejectionChart.data.datasets[0].hidden = true;
+                rejectionChart.data.datasets[1].hidden = false;
+                rejectionChart.data.datasets[2].hidden = true;
+            } else if (tool === 'blast') {
+                rejectionChart.data.datasets[0].hidden = true;
+                rejectionChart.data.datasets[1].hidden = true;
+                rejectionChart.data.datasets[2].hidden = false;
+            }
+            rejectionChart.update();
+        }
+
+        // --- Chart 3: Figure 7 Robustness Line Chart ---
+        const robustnessCtx = document.getElementById('robustnessLineChart').getContext('2d');
+        new Chart(robustnessCtx, {
+            type: 'line',
+            data: {
+                labels: robustnessData.levels,
+                datasets: [
+                    {
+                        label: 'ViralGen AI (Open-World DL)',
+                        data: robustnessData.viralgen,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#198754',
+                        fill: false,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Mash (MinHash k=21)',
+                        data: robustnessData.mash,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                        borderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#0d6efd',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'BLAST (NCBI blastn)',
+                        data: robustnessData.blast,
+                        borderColor: '#6c757d',
+                        backgroundColor: 'rgba(108, 117, 125, 0.15)',
+                        borderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#6c757d',
+                        borderDash: [2, 2],
+                        fill: false,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 105,
+                        title: { display: true, text: 'Độ chính xác / Accuracy (%)' },
+                        ticks: { callback: v => v + '%' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Mức độ nhiễu (Đột biến thay thế & Cắt cụt)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 16 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': ' + ctx.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

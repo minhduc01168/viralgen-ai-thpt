@@ -1,0 +1,15 @@
+# Raw genomic data and time-forward datasets (>100MB)
+data/*.fasta
+data/sars-cov2-time-forward-dataset/
+
+# Heavy intermediate baseline outputs and binary sketches
+results/*.fasta
+results/*.msh
+results/*.tsv
+results/refdb.*
+results/noise_*/
+results/robustness_*/
+
+# Caches
+__pycache__/
+*.pyc

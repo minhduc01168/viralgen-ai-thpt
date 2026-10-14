@@ -1,0 +1,2 @@
+blast_seconds=35.520886735
+mash_seconds=1.384884855
