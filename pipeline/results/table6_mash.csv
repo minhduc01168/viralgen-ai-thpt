@@ -1,0 +1,9 @@
+period,lineage,n,rejected,rejection_rate,mean_novelty_score
+T1,Alpha,200,61,0.305,0.0018
+T1,Beta,17,2,0.1176,0.0012
+T1,Delta,1000,113,0.113,0.0012
+T1,Gamma,87,6,0.069,0.001
+T2,Delta,999,90,0.0901,0.0011
+T2,Omicron,27,8,0.2963,0.0032
+T3,Delta,200,20,0.1,0.0014
+T3,Omicron,1000,392,0.392,0.003

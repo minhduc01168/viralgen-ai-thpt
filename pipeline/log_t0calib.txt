@@ -1,0 +1,21 @@
+nohup: ignoring input
+[baseline] period=T0_calib query=results/T0_calib.fasta ref=results/reference.fasta
+
+
+Building a new DB, current time: 07/27/2026 16:39:50
+New DB name:   /home/mypc/pipeline/results/refdb
+New DB title:  results/reference.fasta
+Sequence type: Nucleotide
+Keep MBits: T
+Maximum file size: 1000000000B
+Adding sequences from FASTA; added 120 sequences in 0.0707512 seconds.
+
+
+Warning: [blastn] Examining 5 or more matches is recommended
+Sketching results/reference.fasta...
+Writing to results/refdb.msh...
+Sketching results/T0_calib.fasta...
+Writing to results/query_T0_calib.msh...
+[baseline] done -> results/blast_T0_calib.tsv , results/mash_T0_calib.tsv
+blast_seconds=266.866388728
+mash_seconds=9.886621614

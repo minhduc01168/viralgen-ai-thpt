@@ -7,10 +7,17 @@ Hệ thống giám sát virus sử dụng trí tuệ nhân tạo để phân tí
 ```
 viralgen-ai-app/
 ├── app/                          # Ứng dụng Web Flask
-│   ├── app.py                    # Flask application
-│   ├── templates/                # HTML templates
+│   ├── app.py                    # Flask application & routes (/ & /comparison)
+│   ├── templates/                # HTML templates (index, result, comparison)
 │   ├── static/css/style.css      # CSS
+│   ├── static/img/               # Hình ảnh và biểu đồ benchmark
 │   └── uploads/                  # Thư mục upload
+├── pipeline/                     # Pipeline benchmark so sánh công cụ (BLAST, Mash, Robustness)
+│   ├── scripts/                  # Scripts tiền xử lý, chạy baseline & tính metric
+│   ├── figures/                  # Biểu đồ xuất bản (Figure 7)
+│   ├── results/                  # Kết quả benchmark (Table 6, Table 7, Robustness)
+│   ├── data/                     # Metadata & hướng dẫn dữ liệu
+│   └── HUONG_DAN_SU_DUNG.md      # Hướng dẫn chi tiết chạy pipeline
 ├── dataset_test/                 # Dữ liệu test mẫu
 │   ├── IND/                      # Biến thể đã biết (Alpha, Beta, Delta, Gamma, Omicron)
 │   └── OOD/                      # Biến thể lạ (Lambda, Zeta, Mu, Eta)
@@ -152,6 +159,8 @@ python predict.py --input dataset_test/IND/sequences_20260517_1817244_B.1.1.7_Al
 | Endpoint | Method | Mô tả |
 |----------|--------|-------|
 | `/` | GET | Trang chủ (upload file) |
+| `/comparison` | GET | **Tool Comparison Panel** (Bảng & biểu đồ so sánh ViralGen AI vs BLAST vs Mash) |
+| `/api/comparison` | GET | API trả về dữ liệu benchmark so sánh các công cụ (JSON) |
 | `/upload` | POST | Upload file để phân tích |
 | `/analyze/<filename>` | GET | Kết quả phân tích |
 | `/api/analyze` | POST | API phân tích (JSON) |
